@@ -62,10 +62,6 @@ def lambda_handler(event, context):
                 platformVersion='LATEST',
                 networkConfiguration={
                     'awsvpcConfiguration': {
-                        # 'subnets': [
-                        #     'subnet-10a0152e',  # replace with your public subnet or a private with NAT
-                        #     'subnet-1b5b6a51'  # Second is optional, but good idea to have two
-                        # ],
                         'subnets': subnets,
                         'securityGroups': security_groups,
                         'assignPublicIp': 'ENABLED'
@@ -90,7 +86,7 @@ def lambda_handler(event, context):
             print(response)
             send(event, context, SUCCESS, {"Response": str(response)})
         elif event['RequestType'] == 'Update':
-            # TODO Implement for Update
+            #TODO Implement for Update
             send(event, context, FAILED, {"Error": "Logic Not implemented Yet"})
 
     except Exception as err:
