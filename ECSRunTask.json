@@ -1,0 +1,228 @@
+{
+	"AWSTemplateFormatVersion": "2010-09-09",
+	"Description": "An example CloudFormation template for Fargate.",
+	"Metadata": {
+		"AWS::CloudFormation::Interface": {
+			"ParameterGroups": [
+				{
+					"Label": {
+						"default": "Task Defs Network Configuration"
+					},
+					"Parameters": [
+						"VPC",
+						"Subnets",
+						"TaskDefSecurityGroup"
+					]
+				},
+				{
+					"Label": {
+						"default": "ECS Configuration"
+					},
+					"Parameters": [
+						"ServiceName",
+						"Image"
+					]
+				}
+			]
+		}
+	},
+	"Parameters": {
+		"VPC": {
+			"Type": "AWS::EC2::VPC::Id",
+			"Default": "vpc-09716e17eb6129849"
+		},
+		"Subnets": {
+			"Type": "List<AWS::EC2::Subnet::Id>",
+			"Default": "subnet-023efb1e07ac288f0,subnet-04c94da52c0808584,subnet-0c04008c1cc5939e1"
+		},
+		"Image": {
+			"Type": "String",
+			"Default": "495830459543.dkr.ecr.us-east-1.amazonaws.com/ecs-testing:latest"
+		},
+		"ServiceName": {
+			"Type": "String",
+			"Default": "MyService"
+		},
+		"TaskDefSecurityGroup": {
+			"Type": "List<AWS::EC2::SecurityGroup::Id>",
+			"Description": "Make sure to select a SG from above selected VPC",
+			"Default": "sg-0894402973926b0df"
+		}
+	},
+	"Resources": {
+		"Cluster": {
+			"Type": "AWS::ECS::Cluster",
+			"Properties": {
+				"ClusterName": {
+					"Fn::Join": [
+						"",
+						[
+							{
+								"Ref": "ServiceName"
+							},
+							"Cluster"
+						]
+					]
+				}
+			}
+		},
+		"TaskDefinition": {
+			"Type": "AWS::ECS::TaskDefinition",
+			"DependsOn": "LogGroup",
+			"Properties": {
+				"Family": {
+					"Fn::Join": [
+						"",
+						[
+							{
+								"Ref": "ServiceName"
+							},
+							"TaskDefinition"
+						]
+					]
+				},
+				"NetworkMode": "awsvpc",
+				"RequiresCompatibilities": [
+					"FARGATE"
+				],
+				"Cpu": 256,
+				"Memory": "0.5GB",
+				"ExecutionRoleArn": {
+					"Ref": "ExecutionRole"
+				},
+				"TaskRoleArn": {
+					"Ref": "TaskRole"
+				},
+				"ContainerDefinitions": [
+					{
+						"Name": {
+							"Ref": "ServiceName"
+						},
+						"Image": {
+							"Ref": "Image"
+						},
+						"LogConfiguration": {
+							"LogDriver": "awslogs",
+							"Options": {
+								"awslogs-region": {
+									"Ref": "AWS::Region"
+								},
+								"awslogs-group": {
+									"Ref": "LogGroup"
+								},
+								"awslogs-stream-prefix": "ecs"
+							}
+						}
+					}
+				]
+			}
+		},
+		"ExecutionRole": {
+			"Type": "AWS::IAM::Role",
+			"Properties": {
+				"RoleName": {
+					"Fn::Join": [
+						"",
+						[
+							{
+								"Ref": "ServiceName"
+							},
+							"ExecutionRole"
+						]
+					]
+				},
+				"AssumeRolePolicyDocument": {
+					"Statement": [
+						{
+							"Effect": "Allow",
+							"Principal": {
+								"Service": "ecs-tasks.amazonaws.com"
+							},
+							"Action": "sts:AssumeRole"
+						}
+					]
+				},
+				"ManagedPolicyArns": [
+					"arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+				]
+			}
+		},
+		"TaskRole": {
+			"Type": "AWS::IAM::Role",
+			"Properties": {
+				"RoleName": {
+					"Fn::Join": [
+						"",
+						[
+							{
+								"Ref": "ServiceName"
+							},
+							"TaskRole"
+						]
+					]
+				},
+				"AssumeRolePolicyDocument": {
+					"Statement": [
+						{
+							"Effect": "Allow",
+							"Principal": {
+								"Service": "ecs-tasks.amazonaws.com"
+							},
+							"Action": "sts:AssumeRole"
+						}
+					]
+				}
+			}
+		},
+		"LogGroup": {
+			"Type": "AWS::Logs::LogGroup",
+			"Properties": {
+				"LogGroupName": {
+					"Fn::Join": [
+						"",
+						[
+							"/ecs/",
+							{
+								"Ref": "ServiceName"
+							},
+							"TaskDefinition"
+						]
+					]
+				}
+			}
+		},
+		"ECSRunTask": {
+			"Type": "Custom::ECSRunTask",
+			"Properties": {
+				"ServiceToken": {
+					"Fn::Join": [
+						":",
+						[
+							"arn:aws:lambda",
+							{
+								"Ref": "AWS::Region"
+							},
+							{
+								"Ref": "AWS::AccountId"
+							},
+							"cfn-ecs-runtask"
+						]
+					]
+				},
+				"ClusterId": {
+					"Ref": "Cluster"
+				},
+				"TaskDefinition": {
+					"Ref": "TaskDefinition"
+				},
+				"ContainerName": "MyTest",
+				"SecurityGroups": {
+					"Ref": "TaskDefSecurityGroup"
+				},
+				"Subnets": {
+					"Ref": "Subnets"
+				}
+			}
+		}
+	}
+}
