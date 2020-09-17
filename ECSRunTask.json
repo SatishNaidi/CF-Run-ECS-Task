@@ -1,228 +1,278 @@
 {
-	"AWSTemplateFormatVersion": "2010-09-09",
-	"Description": "An example CloudFormation template for Fargate.",
-	"Metadata": {
-		"AWS::CloudFormation::Interface": {
-			"ParameterGroups": [
-				{
-					"Label": {
-						"default": "Task Defs Network Configuration"
-					},
-					"Parameters": [
-						"VPC",
-						"Subnets",
-						"TaskDefSecurityGroup"
-					]
-				},
-				{
-					"Label": {
-						"default": "ECS Configuration"
-					},
-					"Parameters": [
-						"ServiceName",
-						"Image"
-					]
-				}
-			]
-		}
-	},
-	"Parameters": {
-		"VPC": {
-			"Type": "AWS::EC2::VPC::Id",
-			"Default": "vpc-09716e17eb6129849"
-		},
-		"Subnets": {
-			"Type": "List<AWS::EC2::Subnet::Id>",
-			"Default": "subnet-023efb1e07ac288f0,subnet-04c94da52c0808584,subnet-0c04008c1cc5939e1"
-		},
-		"Image": {
-			"Type": "String",
-			"Default": "495830459543.dkr.ecr.us-east-1.amazonaws.com/ecs-testing:latest"
-		},
-		"ServiceName": {
-			"Type": "String",
-			"Default": "MyService"
-		},
-		"TaskDefSecurityGroup": {
-			"Type": "List<AWS::EC2::SecurityGroup::Id>",
-			"Description": "Make sure to select a SG from above selected VPC",
-			"Default": "sg-0894402973926b0df"
-		}
-	},
-	"Resources": {
-		"Cluster": {
-			"Type": "AWS::ECS::Cluster",
-			"Properties": {
-				"ClusterName": {
-					"Fn::Join": [
-						"",
-						[
-							{
-								"Ref": "ServiceName"
-							},
-							"Cluster"
-						]
-					]
-				}
-			}
-		},
-		"TaskDefinition": {
-			"Type": "AWS::ECS::TaskDefinition",
-			"DependsOn": "LogGroup",
-			"Properties": {
-				"Family": {
-					"Fn::Join": [
-						"",
-						[
-							{
-								"Ref": "ServiceName"
-							},
-							"TaskDefinition"
-						]
-					]
-				},
-				"NetworkMode": "awsvpc",
-				"RequiresCompatibilities": [
-					"FARGATE"
-				],
-				"Cpu": 256,
-				"Memory": "0.5GB",
-				"ExecutionRoleArn": {
-					"Ref": "ExecutionRole"
-				},
-				"TaskRoleArn": {
-					"Ref": "TaskRole"
-				},
-				"ContainerDefinitions": [
-					{
-						"Name": {
-							"Ref": "ServiceName"
-						},
-						"Image": {
-							"Ref": "Image"
-						},
-						"LogConfiguration": {
-							"LogDriver": "awslogs",
-							"Options": {
-								"awslogs-region": {
-									"Ref": "AWS::Region"
-								},
-								"awslogs-group": {
-									"Ref": "LogGroup"
-								},
-								"awslogs-stream-prefix": "ecs"
-							}
-						}
-					}
-				]
-			}
-		},
-		"ExecutionRole": {
-			"Type": "AWS::IAM::Role",
-			"Properties": {
-				"RoleName": {
-					"Fn::Join": [
-						"",
-						[
-							{
-								"Ref": "ServiceName"
-							},
-							"ExecutionRole"
-						]
-					]
-				},
-				"AssumeRolePolicyDocument": {
-					"Statement": [
-						{
-							"Effect": "Allow",
-							"Principal": {
-								"Service": "ecs-tasks.amazonaws.com"
-							},
-							"Action": "sts:AssumeRole"
-						}
-					]
-				},
-				"ManagedPolicyArns": [
-					"arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
-				]
-			}
-		},
-		"TaskRole": {
-			"Type": "AWS::IAM::Role",
-			"Properties": {
-				"RoleName": {
-					"Fn::Join": [
-						"",
-						[
-							{
-								"Ref": "ServiceName"
-							},
-							"TaskRole"
-						]
-					]
-				},
-				"AssumeRolePolicyDocument": {
-					"Statement": [
-						{
-							"Effect": "Allow",
-							"Principal": {
-								"Service": "ecs-tasks.amazonaws.com"
-							},
-							"Action": "sts:AssumeRole"
-						}
-					]
-				}
-			}
-		},
-		"LogGroup": {
-			"Type": "AWS::Logs::LogGroup",
-			"Properties": {
-				"LogGroupName": {
-					"Fn::Join": [
-						"",
-						[
-							"/ecs/",
-							{
-								"Ref": "ServiceName"
-							},
-							"TaskDefinition"
-						]
-					]
-				}
-			}
-		},
-		"ECSRunTask": {
-			"Type": "Custom::ECSRunTask",
-			"Properties": {
-				"ServiceToken": {
-					"Fn::Join": [
-						":",
-						[
-							"arn:aws:lambda",
-							{
-								"Ref": "AWS::Region"
-							},
-							{
-								"Ref": "AWS::AccountId"
-							},
-							"cfn-ecs-runtask"
-						]
-					]
-				},
-				"ClusterId": {
-					"Ref": "Cluster"
-				},
-				"TaskDefinition": {
-					"Ref": "TaskDefinition"
-				},
-				"ContainerName": "MyTest",
-				"SecurityGroups": {
-					"Ref": "TaskDefSecurityGroup"
-				},
-				"Subnets": {
-					"Ref": "Subnets"
-				}
-			}
-		}
-	}
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "An example CloudFormation template for Fargate",
+    "Metadata": {
+        "AWS::CloudFormation::Interface": {
+            "ParameterGroups": [
+                {
+                    "Label": {
+                        "default": "Task Defs Network Configuration"
+                    },
+                    "Parameters": [
+                        "VPC",
+                        "Subnets",
+                        "TaskDefSecurityGroup"
+                    ]
+                },
+                {
+                    "Label": {
+                        "default": "ECS Configuration"
+                    },
+                    "Parameters": [
+                        "ServiceName",
+                        "Image"
+                    ]
+                }
+            ]
+        }
+    },
+    "Parameters": {
+        "VPC": {
+            "Type": "AWS::EC2::VPC::Id",
+            "Default": "vpc-09716e17eb6129849"
+        },
+        "Subnets": {
+            "Type": "List<AWS::EC2::Subnet::Id>",
+            "Default": "subnet-023efb1e07ac288f0,subnet-04c94da52c0808584,subnet-0c04008c1cc5939e1"
+        },
+        "Image": {
+            "Type": "String",
+            "Default": "495830459543.dkr.ecr.us-east-1.amazonaws.com/ecs-testing:latest"
+        },
+        "ServiceName": {
+            "Type": "String"
+        },
+        "TaskDefSecurityGroup": {
+            "Type": "List<AWS::EC2::SecurityGroup::Id>",
+            "Description": "Make sure to select a SG from above selected VPC",
+            "Default": "sg-0894402973926b0df"
+        }
+    },
+    "Resources": {
+        "Cluster": {
+            "Type": "AWS::ECS::Cluster",
+            "Properties": {
+                "ClusterName": {
+                    "Fn::Join": [
+                        "-",
+                        [
+                            {
+                                "Ref": "AWS::StackName"
+                            },
+                            "Cluster"
+                        ]
+                    ]
+                }
+            }
+        },
+        "ExecutionRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "RoleName": {
+                    "Fn::Join": [
+                        "-",
+                        [
+                            {
+                                "Ref": "AWS::StackName"
+                            },
+                            "ECS-ExecutionRole"
+                        ]
+                    ]
+                },
+                "AssumeRolePolicyDocument": {
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": "ecs-tasks.amazonaws.com"
+                            },
+                            "Action": "sts:AssumeRole"
+                        }
+                    ]
+                },
+                "ManagedPolicyArns": [
+                    "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+                ]
+            }
+        },
+        "TaskRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "RoleName": {
+                    "Fn::Join": [
+                        "-",
+                        [
+                            {
+                                "Ref": "AWS::StackName"
+                            },
+                            "ECS-TaskRole"
+                        ]
+                    ]
+                },
+                "AssumeRolePolicyDocument": {
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": "ecs-tasks.amazonaws.com"
+                            },
+                            "Action": "sts:AssumeRole"
+                        }
+                    ]
+                }
+            }
+        },
+        "LogGroup": {
+            "Type": "AWS::Logs::LogGroup",
+            "Properties": {
+                "LogGroupName": {
+                    "Fn::Join": [
+                        "",
+                        [
+                            "/ecs/",
+                            {
+                                "Ref": "AWS::StackName"
+                            },
+                            "-TaskDefinition"
+                        ]
+                    ]
+                }
+            }
+        },
+        "TaskDefinition": {
+            "Type": "AWS::ECS::TaskDefinition",
+            "DependsOn": "LogGroup",
+            "Properties": {
+                "Family": {
+                    "Fn::Join": [
+                        "",
+                        [
+                            {
+                                "Ref": "AWS::StackName"
+                            },
+                            "TaskDefinition"
+                        ]
+                    ]
+                },
+                "NetworkMode": "awsvpc",
+                "RequiresCompatibilities": [
+                    "FARGATE"
+                ],
+                "Cpu": 256,
+                "Memory": "0.5GB",
+                "ExecutionRoleArn": {
+                    "Ref": "ExecutionRole"
+                },
+                "TaskRoleArn": {
+                    "Ref": "TaskRole"
+                },
+                "ContainerDefinitions": [
+                    {
+                        "Name": {
+                            "Ref": "ServiceName"
+                        },
+                        "Image": {
+                            "Ref": "Image"
+                        },
+                        "LogConfiguration": {
+                            "LogDriver": "awslogs",
+                            "Options": {
+                                "awslogs-region": {
+                                    "Ref": "AWS::Region"
+                                },
+                                "awslogs-group": {
+                                    "Ref": "LogGroup"
+                                },
+                                "awslogs-stream-prefix": "ecs"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        "LambdaExecutionRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "RoleName": {
+                    "Fn::Join": [
+                        "-",
+                        [
+                            {
+                                "Ref": "AWS::StackName"
+                            },
+                            "LambdaRole"
+                        ]
+                    ]
+                },
+                "AssumeRolePolicyDocument": {
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": "lambda.amazonaws.com"
+                            },
+                            "Action": "sts:AssumeRole"
+                        }
+                    ]
+                },
+                "ManagedPolicyArns": [
+                    "arn:aws:iam::aws:policy/AmazonECS_FullAccess",
+                    "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+                ]
+            }
+        },
+        "CustomResourceLMF": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+                "Role": {
+                    "Fn::GetAtt": [
+                        "LambdaExecutionRole",
+                        "Arn"
+                    ]
+                },
+                "FunctionName": {
+                    "Fn::Join": [
+                        "-",
+                        [
+                            "CustomResource",
+                            {
+                                "Ref": "AWS::StackName"
+                            },
+                            "LMF"
+                        ]
+                    ]
+                },
+                "Runtime": "python3.7",
+                "Handler": "index.lambda_handler",
+                "Timeout": 300,
+                "Code": {
+                    "ZipFile": "import boto3\nimport warnings\nfrom botocore.vendored import requests\nimport json\n\ndef send(event, context, responseStatus, responseData, physicalResourceId=None, noEcho=False):\n    warnings.filterwarnings('ignore', category=DeprecationWarning)\n    responseUrl = event['ResponseURL']\n    print(responseUrl)\n\n    responseBody = {}\n    responseBody['Status'] = responseStatus\n    responseBody['Reason'] = 'See the details in CloudWatch Log Stream: ' + context.log_stream_name\n    responseBody['PhysicalResourceId'] = physicalResourceId or context.log_stream_name\n    responseBody['StackId'] = event['StackId']\n    responseBody['RequestId'] = event['RequestId']\n    responseBody['LogicalResourceId'] = event['LogicalResourceId']\n    responseBody['NoEcho'] = noEcho\n    responseBody['Data'] = responseData\n\n    json_responseBody = json.dumps(responseBody)\n\n    print('Response body:\\n' + json_responseBody)\n\n    headers = {\n        'content-type': '',\n        'content-length': str(len(json_responseBody))\n    }\n\n    try:\n        response = requests.put(responseUrl, data=json_responseBody, headers=headers)\n        print('Status code: ' + response.reason)\n    except Exception as e:\n        print('send(..) failed executing requests.put(..): ' + str(e))\n\n\ndef lambda_handler(event, context):\n    print(event)\n    SUCCESS = \"SUCCESS\"\n    FAILED = \"FAILED\"\n    try:\n        subnets = event['ResourceProperties']['Subnets']\n        security_groups = event['ResourceProperties']['SecurityGroups']\n        cluster_id = event['ResourceProperties']['ClusterId']\n        task_df = event['ResourceProperties']['TaskDefinition'].split(\"/\")[-1]\n\n        if event['RequestType'] == 'Create':\n            client = boto3.client('ecs')\n            response = client.run_task(\n                cluster=cluster_id,  # name of the cluster\n                launchType='FARGATE',\n                taskDefinition=task_df,  # replace with your task definition name and revision\n                count=1,\n                platformVersion='LATEST',\n                networkConfiguration={\n                    'awsvpcConfiguration': {\n                        'subnets': subnets,\n                        'securityGroups': security_groups,\n                        'assignPublicIp': 'ENABLED'\n                    }\n                })\n            print(response)\n            task_arn = response[\"tasks\"][0][\"taskArn\"]\n            send(event, context, SUCCESS, event, task_arn)\n        elif event['RequestType'] == 'Delete':\n            task_arn = event['PhysicalResourceId']\n            if task_arn is None:\n                err = \"Couldn't find the TaskARN in Physical ID\"\n                print(err)\n                send(event, context, FAILED, {\"Error\": err})\n\n            print(f\"TaskARN:{task_arn}\")\n            client = boto3.client('ecs')\n            response = client.stop_task(\n                cluster=cluster_id,\n                task=task_arn\n            )\n            print(response)\n            send(event, context, SUCCESS, {\"Response\": str(response)})\n        elif event['RequestType'] == 'Update':\n            #TODO Implement for Update\n            send(event, context, SUCCESS, {\"Error\": \"Logic Not implemented Yet\"})\n\n    except Exception as err:\n        print(err)\n        return send(event, context, FAILED, {\"Error\": str(err)})\n"
+                }
+            }
+        },
+        "ECSRunTask": {
+            "Type": "Custom::ECSRunTask",
+            "Properties": {
+                "ServiceToken": {
+                    "Fn::GetAtt": [
+                        "CustomResourceLMF",
+                        "Arn"
+                    ]
+                },
+                "ClusterId": {
+                    "Ref": "Cluster"
+                },
+                "TaskDefinition": {
+                    "Ref": "TaskDefinition"
+                },
+                "ContainerName": "MyTest",
+                "SecurityGroups": {
+                    "Ref": "TaskDefSecurityGroup"
+                },
+                "Subnets": {
+                    "Ref": "Subnets"
+                }
+            }
+        }
+    }
 }
