@@ -19,7 +19,6 @@
                         "default": "ECS Configuration"
                     },
                     "Parameters": [
-                        "ServiceName",
                         "Image"
                     ]
                 }
@@ -38,9 +37,6 @@
         "Image": {
             "Type": "String",
             "Default": "495830459543.dkr.ecr.us-east-1.amazonaws.com/ecs-testing:latest"
-        },
-        "ServiceName": {
-            "Type": "String"
         },
         "TaskDefSecurityGroup": {
             "Type": "List<AWS::EC2::SecurityGroup::Id>",
@@ -75,7 +71,7 @@
                             {
                                 "Ref": "AWS::StackName"
                             },
-                            "ECS-ExecutionRole"
+                            "ECS-ExecutionRole1"
                         ]
                     ]
                 },
@@ -168,9 +164,7 @@
                 },
                 "ContainerDefinitions": [
                     {
-                        "Name": {
-                            "Ref": "ServiceName"
-                        },
+                        "Name": "MyApp",
                         "Image": {
                             "Ref": "Image"
                         },
@@ -224,6 +218,7 @@
         "CustomResourceLMF": {
             "Type": "AWS::Lambda::Function",
             "Properties": {
+                "Description": "Custom Resource Created by ECS CF Stack for Running Task",
                 "Role": {
                     "Fn::GetAtt": [
                         "LambdaExecutionRole",
@@ -246,7 +241,7 @@
                 "Handler": "index.lambda_handler",
                 "Timeout": 300,
                 "Code": {
-                    "ZipFile": "import boto3\nimport warnings\nfrom botocore.vendored import requests\nimport json\n\ndef send(event, context, responseStatus, responseData, physicalResourceId=None, noEcho=False):\n    warnings.filterwarnings('ignore', category=DeprecationWarning)\n    responseUrl = event['ResponseURL']\n    print(responseUrl)\n\n    responseBody = {}\n    responseBody['Status'] = responseStatus\n    responseBody['Reason'] = 'See the details in CloudWatch Log Stream: ' + context.log_stream_name\n    responseBody['PhysicalResourceId'] = physicalResourceId or context.log_stream_name\n    responseBody['StackId'] = event['StackId']\n    responseBody['RequestId'] = event['RequestId']\n    responseBody['LogicalResourceId'] = event['LogicalResourceId']\n    responseBody['NoEcho'] = noEcho\n    responseBody['Data'] = responseData\n\n    json_responseBody = json.dumps(responseBody)\n\n    print('Response body:\\n' + json_responseBody)\n\n    headers = {\n        'content-type': '',\n        'content-length': str(len(json_responseBody))\n    }\n\n    try:\n        response = requests.put(responseUrl, data=json_responseBody, headers=headers)\n        print('Status code: ' + response.reason)\n    except Exception as e:\n        print('send(..) failed executing requests.put(..): ' + str(e))\n\n\ndef lambda_handler(event, context):\n    print(event)\n    SUCCESS = \"SUCCESS\"\n    FAILED = \"FAILED\"\n    try:\n        subnets = event['ResourceProperties']['Subnets']\n        security_groups = event['ResourceProperties']['SecurityGroups']\n        cluster_id = event['ResourceProperties']['ClusterId']\n        task_df = event['ResourceProperties']['TaskDefinition'].split(\"/\")[-1]\n\n        if event['RequestType'] == 'Create':\n            client = boto3.client('ecs')\n            response = client.run_task(\n                cluster=cluster_id,  # name of the cluster\n                launchType='FARGATE',\n                taskDefinition=task_df,  # replace with your task definition name and revision\n                count=1,\n                platformVersion='LATEST',\n                networkConfiguration={\n                    'awsvpcConfiguration': {\n                        'subnets': subnets,\n                        'securityGroups': security_groups,\n                        'assignPublicIp': 'ENABLED'\n                    }\n                })\n            print(response)\n            task_arn = response[\"tasks\"][0][\"taskArn\"]\n            send(event, context, SUCCESS, event, task_arn)\n        elif event['RequestType'] == 'Delete':\n            task_arn = event['PhysicalResourceId']\n            if task_arn is None:\n                err = \"Couldn't find the TaskARN in Physical ID\"\n                print(err)\n                send(event, context, FAILED, {\"Error\": err})\n\n            print(f\"TaskARN:{task_arn}\")\n            client = boto3.client('ecs')\n            response = client.stop_task(\n                cluster=cluster_id,\n                task=task_arn\n            )\n            print(response)\n            send(event, context, SUCCESS, {\"Response\": str(response)})\n        elif event['RequestType'] == 'Update':\n            #TODO Implement for Update\n            send(event, context, SUCCESS, {\"Error\": \"Logic Not implemented Yet\"})\n\n    except Exception as err:\n        print(err)\n        return send(event, context, FAILED, {\"Error\": str(err)})\n"
+                    "ZipFile": "import boto3\nimport warnings\nfrom botocore.vendored import requests\nimport json\ndef send(event, context, responseStatus, responseData,physicalResourceId=None, noEcho=False):\n    warnings.filterwarnings('ignore', category=DeprecationWarning)\n    responseUrl = event['ResponseURL']\n    print(responseUrl)\n    responseBody = {}\n    responseBody['Status'] = responseStatus\n    responseBody['Reason'] = 'See the details in CloudWatch Log Stream: ' + context.log_stream_name\n    responseBody['PhysicalResourceId'] = physicalResourceId or context.log_stream_name\n    responseBody['StackId'] = event['StackId']\n    responseBody['RequestId'] = event['RequestId']\n    responseBody['LogicalResourceId'] = event['LogicalResourceId']\n    responseBody['NoEcho'] = noEcho\n    responseBody['Data'] = responseData\n    json_responseBody = json.dumps(responseBody)\n    print('Response body:\\n' + json_responseBody)\n    headers = {'content-type': '','content-length': str(len(json_responseBody))}\n    try:\n        response = requests.put(responseUrl, data=json_responseBody, headers=headers)\n        print('Status code: ' + response.reason)\n    except Exception as e:\n        print('send(..) failed executing requests.put(..): ' + str(e))\n\ndef run_task(client, cluster_id,task_df,subnets,security_groups):\n    response = client.run_task(\n        cluster=cluster_id,\n        launchType='FARGATE',\n        taskDefinition=task_df,\n        count=1,\n        platformVersion='LATEST',\n        networkConfiguration={\n            'awsvpcConfiguration': {\n                'subnets': subnets,\n                'securityGroups': security_groups,\n                'assignPublicIp': 'ENABLED'\n            }\n        })\n    return response\n\ndef stop_task(client, cluster_id,task_arn):\n    response = client.stop_task(\n        cluster=cluster_id,\n        task=task_arn\n    )\n    return response\n\ndef ordered(obj):\n    if isinstance(obj, dict):\n        return sorted((k, ordered(v)) for k, v in obj.items())\n    if isinstance(obj, list):\n        return sorted(ordered(x) for x in obj)\n    else:\n        return obj\n\ndef lambda_handler(event, context):\n    print(event)\n    SUCCESS = 'SUCCESS'\n    FAILED = 'FAILED'\n    try:\n        subnets = event['ResourceProperties']['Subnets']\n        security_groups = event['ResourceProperties']['SecurityGroups']\n        cluster_id = event['ResourceProperties']['ClusterId']\n        task_df = event['ResourceProperties']['TaskDefinition'].split('/')[-1]\n\n        client = boto3.client('ecs')\n\n        if event['RequestType'] == 'Create':\n            response = run_task(client, cluster_id, task_df, subnets, security_groups)\n            task_arn = response['tasks'][0]['taskArn']\n            send(event, context, SUCCESS, {'Response': str(response)}, task_arn)\n        elif event['RequestType'] in ['Delete','Update']:\n            task_arn = event['PhysicalResourceId']\n            if task_arn is None:\n                err = 'Could not find the TaskARN in Physical ID'\n                print(err)\n                send(event, context, FAILED, {'Error': err})\n                return\n            print(f'TaskARN:{task_arn}')\n            if event['RequestType'] == 'Delete':\n                response = stop_task(client, cluster_id, task_arn)\n                print(response)\n                send(event, context, SUCCESS, {'Response': str(response)})\n            elif event['RequestType'] == 'Update':\n                if ordered(event.get(\"ResourceProperties\")) != ordered(event.get(\"OldResourceProperties\")):\n                    print(stop_task(client, cluster_id, task_arn))\n                    response = run_task(client, cluster_id, task_df, subnets, security_groups)\n                    task_arn = response['tasks'][0]['taskArn']\n                    send(event, context, SUCCESS, {'Response': str(response)}, task_arn)\n                else:\n                    msg = {'Message' : 'No Updates required'}\n                    send(event, context, SUCCESS, msg, task_arn)\n\n    except Exception as err:\n        print(err)\n        send(event, context, FAILED, {'Error': str(err)})\n"
                 }
             }
         },
@@ -265,7 +260,7 @@
                 "TaskDefinition": {
                     "Ref": "TaskDefinition"
                 },
-                "ContainerName": "MyTest",
+                "ContainerName": "MyContainer",
                 "SecurityGroups": {
                     "Ref": "TaskDefSecurityGroup"
                 },
