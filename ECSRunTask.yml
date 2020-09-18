@@ -12,7 +12,6 @@ Metadata:
       - Label:
           default: ECS Configuration
         Parameters:
-          - ServiceName
           - Image
 Parameters:
   VPC:
@@ -24,8 +23,6 @@ Parameters:
   Image:
     Type: String
     Default: '495830459543.dkr.ecr.us-east-1.amazonaws.com/ecs-testing:latest'
-  ServiceName:
-    Type: String
   TaskDefSecurityGroup:
     Type: 'List<AWS::EC2::SecurityGroup::Id>'
     Description: Make sure to select a SG from above selected VPC
@@ -90,7 +87,7 @@ Resources:
       ExecutionRoleArn: !Ref ExecutionRole
       TaskRoleArn: !Ref TaskRole
       ContainerDefinitions:
-        - Name: !Ref ServiceName
+        - Name: MyApp
           Image: !Ref Image
           LogConfiguration:
             LogDriver: awslogs
