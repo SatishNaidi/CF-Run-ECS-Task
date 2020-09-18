@@ -138,7 +138,7 @@ Resources:
 
 
           def send(event, context, responseStatus, responseData,
-          physicalResourceId=None, noEcho=False):
+                   physicalResourceId=None, noEcho=False):
               warnings.filterwarnings('ignore', category=DeprecationWarning)
               responseUrl = event['ResponseURL']
               print(responseUrl)
@@ -169,56 +169,67 @@ Resources:
                   print('send(..) failed executing requests.put(..): ' + str(e))
 
 
+          def run_task(client, cluster_id,task_df,subnets,security_groups):
+              response = client.run_task(
+                  cluster=cluster_id,  # name of the cluster
+                  launchType='FARGATE',
+                  taskDefinition=task_df,  # replace with your task definition name and revision
+                  count=1,
+                  platformVersion='LATEST',
+                  networkConfiguration={
+                      'awsvpcConfiguration': {
+                          'subnets': subnets,
+                          'securityGroups': security_groups,
+                          'assignPublicIp': 'ENABLED'
+                      }
+                  })
+              return response
+
+          def stop_task(client, cluster_id,task_arn):
+              response = client.stop_task(
+                  cluster=cluster_id,
+                  task=task_arn
+              )
+              return response
+
+
           def lambda_handler(event, context):
+              print("*" * 100)
               print(event)
-              SUCCESS = "SUCCESS"
-              FAILED = "FAILED"
+              SUCCESS = 'SUCCESS'
+              FAILED = 'FAILED'
               try:
                   subnets = event['ResourceProperties']['Subnets']
                   security_groups = event['ResourceProperties']['SecurityGroups']
                   cluster_id = event['ResourceProperties']['ClusterId']
-                  task_df = event['ResourceProperties']['TaskDefinition'].split("/")[-1]
+                  task_df = event['ResourceProperties']['TaskDefinition'].split('/')[-1]
+                  request_type = event['RequestType']
 
-                  if event['RequestType'] == 'Create':
-                      client = boto3.client('ecs')
-                      response = client.run_task(
-                          cluster=cluster_id,  # name of the cluster
-                          launchType='FARGATE',
-                          taskDefinition=task_df,  # replace with your task definition name and revision
-                          count=1,
-                          platformVersion='LATEST',
-                          networkConfiguration={
-                              'awsvpcConfiguration': {
-                                  'subnets': subnets,
-                                  'securityGroups': security_groups,
-                                  'assignPublicIp': 'ENABLED'
-                              }
-                          })
+                  client = boto3.client('ecs')
+
+                  if request_type in ['Create','Update']:
+                      print()
+                      response = run_task(client, cluster_id, task_df, subnets, security_groups)
                       print(response)
-                      task_arn = response["tasks"][0]["taskArn"]
+                      task_arn = response['tasks'][0]['taskArn']
                       send(event, context, SUCCESS, event, task_arn)
-                  elif event['RequestType'] == 'Delete':
+                  elif request_type == 'Delete':
                       task_arn = event['PhysicalResourceId']
                       if task_arn is None:
-                          err = "Couldn't find the TaskARN in Physical ID"
+                          err = 'Could not find the TaskARN in Physical ID'
                           print(err)
-                          send(event, context, FAILED, {"Error": err})
-
-                      print(f"TaskARN:{task_arn}")
-                      client = boto3.client('ecs')
-                      response = client.stop_task(
-                          cluster=cluster_id,
-                          task=task_arn
-                      )
+                          send(event, context, FAILED, {'Error': err})
+                          return
+                      print(f'TaskARN:{task_arn}')
+                      response = stop_task(client, cluster_id, task_arn)
                       print(response)
-                      send(event, context, SUCCESS, {"Response": str(response)})
-                  elif event['RequestType'] == 'Update':
-                      #TODO Implement for Update
-                      send(event, context, SUCCESS, {"Error": "Logic Not implemented Yet"})
+                      send(event, context, SUCCESS, {'Response': str(response)})
 
               except Exception as err:
                   print(err)
-                  return send(event, context, FAILED, {"Error": str(err)})
+                  send(event, context, FAILED, {'Error': str(err)})
+
+
 
   ECSRunTask:
     Type: 'Custom::ECSRunTask'
