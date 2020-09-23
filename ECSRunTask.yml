@@ -170,7 +170,7 @@ Resources:
                       'awsvpcConfiguration': {
                           'subnets': subnets,
                           'securityGroups': security_groups,
-                          'assignPublicIp': 'ENABLED'
+                          'assignPublicIp': 'DISABLED'
                       }
                   })
               return response
@@ -181,14 +181,6 @@ Resources:
                   task=task_arn
               )
               return response
-
-          def ordered(obj):
-              if isinstance(obj, dict):
-                  return sorted((k, ordered(v)) for k, v in obj.items())
-              if isinstance(obj, list):
-                  return sorted(ordered(x) for x in obj)
-              else:
-                  return obj
 
           def lambda_handler(event, context):
               print(event)
@@ -219,7 +211,8 @@ Resources:
                           print(response)
                           send(event, context, SUCCESS, {'Response': str(response)})
                       elif event['RequestType'] == 'Update':
-                          if ordered(event.get("ResourceProperties")) != ordered(event.get("OldResourceProperties")):
+                          #if ordered(event.get("ResourceProperties")) != ordered(event.get("OldResourceProperties")):
+                          if event.get("ResourceProperties") != event.get("OldResourceProperties"):
                               print(stop_task(client, cluster_id, task_arn))
                               response = run_task(client, cluster_id, task_df, subnets, security_groups)
                               task_arn = response['tasks'][0]['taskArn']
