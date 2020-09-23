@@ -584,6 +584,57 @@
 				}
 			}
 		},
+		"S3Endpoint": {
+			"Type": "AWS::EC2::VPCEndpoint",
+			"Properties": {
+				"PolicyDocument": {
+					"Version": "2012-10-17",
+					"Statement": [
+						{
+							"Effect": "Allow",
+							"Principal": "*",
+							"Action": [
+								"s3:GetObject",
+								"s3:PutObject",
+								"s3:DeleteObject"
+							],
+							"Resource": [
+								"arn:aws:s3:::your-bucket-name/*"
+							]
+						}
+					]
+				},
+				"RouteTableIds": [
+					{
+						"Ref": "PrivateRouteTable1"
+					},
+					{
+						"Ref": "PrivateRouteTable2"
+					},
+					{
+						"Ref": "PrivateRouteTable3"
+					},
+					{
+						"Ref": "PublicRouteTable"
+					}
+				],
+				"ServiceName": {
+					"Fn::Join": [
+						"",
+						[
+							"com.amazonaws.",
+							{
+								"Ref": "AWS::Region"
+							},
+							".s3"
+						]
+					]
+				},
+				"VpcId": {
+					"Ref": "MyVPC"
+				}
+			}
+		},
 		"EC2SecurityGroup": {
 			"Type": "AWS::EC2::SecurityGroup",
 			"Properties": {
