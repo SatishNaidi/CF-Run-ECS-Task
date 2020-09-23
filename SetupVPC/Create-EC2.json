@@ -1,0 +1,118 @@
+{
+	"Description": "To Create 2 Instances with Custom Security Group",
+	"Metadata": {
+		"AWS::CloudFormation::Interface": {
+			"ParameterGroups": [
+				{
+					"Label": {
+						"default": "VPC And Subnet Selection"
+					},
+					"Parameters": [
+						"VPCTemplate",
+						"InstanceName",
+						"AmiID",
+						"InstanceRole",
+						"SSHKeyName"
+					]
+				}
+			]
+		}
+	},
+	"Parameters": {
+		"VPCTemplate": {
+			"Description": "Name of an active CF stack that was created by Main-CF-Template.json from this repo",
+			"Type": "String",
+			"MinLength": 1,
+			"MaxLength": 255,
+			"AllowedPattern": "^[a-zA-Z][-a-zA-Z0-9]*$",
+			"Default": "VPC"
+		},
+		"SSHKeyName": {
+			"Default": "Mumbai",
+			"Description": "Name of an existing EC2 KeyPair to enable SSH access to the instances",
+			"Type": "AWS::EC2::KeyPair::KeyName",
+			"ConstraintDescription": "Must be the name of an existing EC2 KeyPair."
+		},
+		"AmiID": {
+			"Default": "ami-cfe4b2b0",
+			"Type": "String"
+		},
+		"InstanceName": {
+			"Default": "NewEC2",
+			"Type": "String"
+		},
+		"InstanceRole": {
+			"Default": "EMR_EC2_DefaultRole",
+			"Type": "String"
+		}
+	},
+	"Resources": {
+		"EC2SecurityGroup": {
+			"Type": "AWS::EC2::SecurityGroup",
+			"Properties": {
+				"GroupName": "EC2-Login",
+				"GroupDescription": "Allow Inbound Traffic to Firewall",
+				"VpcId": {
+					"Fn::ImportValue": {
+						"Fn::Sub": "${VPCTemplate}-VPCID"
+					}
+				},
+				"SecurityGroupIngress": [
+					{
+						"IpProtocol": "tcp",
+						"FromPort": 22,
+						"ToPort": 22,
+						"CidrIp": "0.0.0.0/0"
+					}
+				],
+				"Tags": [
+					{
+						"Key": "Name",
+						"Value": "EC2-Security-Group"
+					}
+				]
+			}
+		},
+		"PrivateEC2Instance": {
+			"Type": "AWS::EC2::Instance",
+			"Properties": {
+				"ImageId": {
+					"Ref": "AmiID"
+				},
+				"KeyName": {
+					"Ref": "SSHKeyName"
+				},
+				"SubnetId": {
+					"Fn::ImportValue": {
+						"Fn::Sub": "${VPCTemplate}-PrivateSubnetAZ1ID"
+					}
+				},
+				"InstanceType": "t2.micro",
+				"SecurityGroupIds": [
+					{
+						"Ref": "EC2SecurityGroup"
+					}
+				],
+				"IamInstanceProfile": {
+					"Ref": "InstanceRole"
+				},
+				"Tags": [
+					{
+						"Key": "Name",
+						"Value": {
+							"Ref": "InstanceName"
+						}
+					}
+				]
+			}
+		}
+	},
+	"Outputs": {
+		"MyInstance1": {
+			"Value": {
+				"Ref": "PrivateEC2Instance"
+			},
+			"Description": "PrivateEC2Instance"
+		}
+	}
+}
