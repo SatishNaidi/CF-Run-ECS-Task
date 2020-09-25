@@ -36,7 +36,8 @@
 				"Prod",
 				"Stag",
 				"Supp",
-				"Perf"
+				"Perf",
+				"Test"
 			]
 		},
 		"AZs": {
