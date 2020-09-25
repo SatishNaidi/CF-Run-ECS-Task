@@ -91,7 +91,7 @@
 					{
 						"Key": "Name",
 						"Value": {
-							"Ref": "Environment"
+							"Fn::Sub": "${AWS::StackName}-${Environment}-VPC"
 						}
 					}
 				]
@@ -104,7 +104,7 @@
 					{
 						"Key": "Name",
 						"Value": {
-							"Fn::Sub": "${Environment} IGW"
+							"Fn::Sub": "${AWS::StackName} ${Environment} IGW"
 						}
 					}
 				]
@@ -153,7 +153,7 @@
 					{
 						"Key": "Name",
 						"Value": {
-							"Fn::Sub": "${Environment} AZ1 - Public Subnet"
+							"Fn::Sub": "${AWS::StackName} ${Environment} AZ1 - Public Subnet"
 						}
 					}
 				]
@@ -191,7 +191,7 @@
 					{
 						"Key": "Name",
 						"Value": {
-							"Fn::Sub": "${Environment} AZ2 - Public Subnet"
+							"Fn::Sub": "${AWS::StackName} ${Environment} AZ2 - Public Subnet"
 						}
 					}
 				]
@@ -229,7 +229,7 @@
 					{
 						"Key": "Name",
 						"Value": {
-							"Fn::Sub": "${Environment} AZ3 - Public Subnet"
+							"Fn::Sub": "${AWS::StackName} ${Environment} AZ3 - Public Subnet"
 						}
 					}
 				]
@@ -267,7 +267,7 @@
 					{
 						"Key": "Name",
 						"Value": {
-							"Fn::Sub": "${Environment} AZ1 - Private Subnet"
+							"Fn::Sub": "${AWS::StackName} ${Environment} AZ1 - Private Subnet"
 						}
 					}
 				]
@@ -305,7 +305,7 @@
 					{
 						"Key": "Name",
 						"Value": {
-							"Fn::Sub": "${Environment} AZ2 - Private Subnet"
+							"Fn::Sub": "${AWS::StackName} ${Environment} AZ2 - Private Subnet"
 						}
 					}
 				]
@@ -343,7 +343,7 @@
 					{
 						"Key": "Name",
 						"Value": {
-							"Fn::Sub": "${Environment} AZ3 - Private Subnet"
+							"Fn::Sub": "${AWS::StackName} ${Environment} AZ3 - Private Subnet"
 						}
 					}
 				]
@@ -354,7 +354,7 @@
 			"DependsOn": "InternetGatewayAttachment",
 			"Properties": {
 				"Domain": {
-					"Ref": "Environment"
+					"Fn::Sub": "${AWS::StackName} ${Environment} NGW1 EIP"
 				}
 			}
 		},
@@ -363,7 +363,7 @@
 			"DependsOn": "InternetGatewayAttachment",
 			"Properties": {
 				"Domain": {
-					"Ref": "Environment"
+					"Fn::Sub": "${AWS::StackName} ${Environment} NGW2 EIP"
 				}
 			}
 		},
@@ -372,7 +372,7 @@
 			"DependsOn": "InternetGatewayAttachment",
 			"Properties": {
 				"Domain": {
-					"Ref": "Environment"
+					"Fn::Sub": "${AWS::StackName} ${Environment} NGW3 EIP"
 				}
 			}
 		},
@@ -392,7 +392,7 @@
 					{
 						"Key": "Name",
 						"Value": {
-							"Fn::Sub": "${Environment} NGW1"
+							"Fn::Sub": "${AWS::StackName} ${Environment} NGW1"
 						}
 					}
 				]
@@ -414,7 +414,7 @@
 					{
 						"Key": "Name",
 						"Value": {
-							"Fn::Sub": "${Environment} NGW2"
+							"Fn::Sub": "${AWS::StackName} ${Environment} NGW2"
 						}
 					}
 				]
@@ -436,7 +436,7 @@
 					{
 						"Key": "Name",
 						"Value": {
-							"Fn::Sub": "${Environment} NGW3"
+							"Fn::Sub": "${AWS::StackName} ${Environment} NGW3"
 						}
 					}
 				]
