@@ -1296,6 +1296,7 @@
 		},
 		"NetworkLoadBalancerTargetGroup": {
 			"Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+			"DependsOn": "PrivateEC2Instance",
 			"Properties": {
 				"Name": "networklb-target",
 				"Port": 22,
