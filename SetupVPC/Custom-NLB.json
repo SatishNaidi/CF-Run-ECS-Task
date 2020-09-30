@@ -1,6 +1,47 @@
 {
 	"AWSTemplateFormatVersion": "2010-09-09",
 	"Description": "To Create the Platform VPC, with 3 Private and 3 Public Subnets",
+	"Parameters": {
+		"Environment": {
+			"Description": "Select an Environment for setting up network",
+			"Type": "String",
+			"AllowedValues": [
+				"Prod",
+				"Stag",
+				"Supp",
+				"Perf",
+				"Test"
+			]
+		},
+		"AZs": {
+			"Type": "List<AWS::EC2::AvailabilityZone::Name>",
+			"Default": "us-east-1a,us-east-1b,us-east-1c",
+			"Description": "Select Three AZs, where the Public and Private Subnets will be deployed."
+		},
+		"CidrBit": {
+			"Description": "Select the Cidr bit for vpc creation, 10.X.0.0/16",
+			"Type": "Number",
+			"MaxValue": 255,
+			"MinValue": 0
+		},
+		"SSHKeyName": {
+			"Description": "Name of an existing EC2 KeyPair to enable SSH access to the instances",
+			"Type": "AWS::EC2::KeyPair::KeyName",
+			"ConstraintDescription": "Must be the name of an existing EC2 KeyPair."
+		},
+		"AmiID": {
+			"Default": "ami-cfe4b2b0",
+			"Type": "String"
+		},
+		"InstanceName": {
+			"Default": "NewEC2",
+			"Type": "String"
+		},
+		"InstanceRole": {
+			"Default": "EMR_EC2_DefaultRole",
+			"Type": "String"
+		}
+	},
 	"Metadata": {
 		"AWS::CloudFormation::Interface": {
 			"ParameterGroups": [
@@ -26,47 +67,6 @@
 					]
 				}
 			]
-		}
-	},
-	"Parameters": {
-		"Environment": {
-			"Description": "Select an Environment for setting up network",
-			"Type": "String",
-			"AllowedValues": [
-				"Prod",
-				"Stag",
-				"Supp",
-				"Perf",
-				"Test"
-			]
-		},
-		"AZs": {
-			"Type": "List<AWS::EC2::AvailabilityZone::Name>",
-			"Default": "us-east-1a,us-east-1b,us-east-1c",
-			"Description": "Select Three AZs, where the Public and Private Subnets will be deployed."
-		},
-		"CidrBit": {
-			"Description": "Select the Cidr bit vpc creation, 10.X.0.0/16",
-			"Type": "Number",
-			"MaxValue": 255,
-			"MinValue": 0
-		},
-		"SSHKeyName": {
-			"Description": "Name of an existing EC2 KeyPair to enable SSH access to the instances",
-			"Type": "AWS::EC2::KeyPair::KeyName",
-			"ConstraintDescription": "Must be the name of an existing EC2 KeyPair."
-		},
-		"AmiID": {
-			"Default": "ami-cfe4b2b0",
-			"Type": "String"
-		},
-		"InstanceName": {
-			"Default": "NewEC2",
-			"Type": "String"
-		},
-		"InstanceRole": {
-			"Default": "EMR_EC2_DefaultRole",
-			"Type": "String"
 		}
 	},
 	"Resources": {
@@ -148,7 +148,7 @@
 						]
 					]
 				},
-				"MapPublicIpOnLaunch": true,
+				"MapPublicIpOnLaunch": false,
 				"Tags": [
 					{
 						"Key": "Name",
@@ -186,7 +186,7 @@
 						]
 					]
 				},
-				"MapPublicIpOnLaunch": true,
+				"MapPublicIpOnLaunch": false,
 				"Tags": [
 					{
 						"Key": "Name",
@@ -224,7 +224,7 @@
 						]
 					]
 				},
-				"MapPublicIpOnLaunch": true,
+				"MapPublicIpOnLaunch": false,
 				"Tags": [
 					{
 						"Key": "Name",
