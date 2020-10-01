@@ -30,7 +30,7 @@
 			"ConstraintDescription": "Must be the name of an existing EC2 KeyPair."
 		},
 		"AmiID": {
-			"Default": "ami-cfe4b2b0",
+			"Default": "ami-04372aa77fc809ab4",
 			"Type": "String"
 		},
 		"InstanceName": {
@@ -38,7 +38,7 @@
 			"Type": "String"
 		},
 		"InstanceRole": {
-			"Default": "EMR_EC2_DefaultRole",
+			"Default": "SSM_EC2_Role",
 			"Type": "String"
 		}
 	},
@@ -669,6 +669,12 @@
 								"CidrBlock"
 							]
 						}
+					},
+					{
+						"IpProtocol": "tcp",
+						"FromPort": 443,
+						"ToPort": 443,
+						"CidrIp": "0.0.0.0/0"
 					}
 				],
 				"Tags": [
