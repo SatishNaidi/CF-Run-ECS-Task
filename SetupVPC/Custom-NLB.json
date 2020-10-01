@@ -143,7 +143,7 @@
 						]
 					]
 				},
-				"MapPublicIpOnLaunch": true,
+				"MapPublicIpOnLaunch": false,
 				"Tags": [
 					{
 						"Key": "Name",
@@ -181,7 +181,7 @@
 						]
 					]
 				},
-				"MapPublicIpOnLaunch": true,
+				"MapPublicIpOnLaunch": false,
 				"Tags": [
 					{
 						"Key": "Name",
@@ -219,7 +219,7 @@
 						]
 					]
 				},
-				"MapPublicIpOnLaunch": true,
+				"MapPublicIpOnLaunch": false,
 				"Tags": [
 					{
 						"Key": "Name",
@@ -1246,6 +1246,7 @@
 		},
 		"PrivateEC2Instance": {
 			"Type": "AWS::EC2::Instance",
+			"DependsOn": "PrivateRoute1",
 			"Properties": {
 				"ImageId": {
 					"Ref": "AmiID"
@@ -1285,6 +1286,7 @@
 		},
 		"BastionInstance": {
 			"Type": "AWS::EC2::Instance",
+			"DependsOn": "PrivateRoute1",
 			"Properties": {
 				"ImageId": {
 					"Ref": "AmiID"
@@ -1329,13 +1331,13 @@
 				"Scheme": "internal",
 				"Subnets": [
 					{
-						"Ref": "PublicSubnetAZ1"
+						"Ref": "PrivateSubnetAZ1"
 					},
 					{
-						"Ref": "PublicSubnetAZ2"
+						"Ref": "PrivateSubnetAZ2"
 					},
 					{
-						"Ref": "PublicSubnetAZ3"
+						"Ref": "PrivateSubnetAZ3"
 					}
 				],
 				"Type": "network",
