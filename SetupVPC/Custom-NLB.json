@@ -30,11 +30,7 @@
 			"ConstraintDescription": "Must be the name of an existing EC2 KeyPair."
 		},
 		"AmiID": {
-			"Default": "ami-04372aa77fc809ab4",
-			"Type": "String"
-		},
-		"InstanceName": {
-			"Default": "NewEC2",
+			"Default": "ami-02354e95b39ca8dec",
 			"Type": "String"
 		},
 		"InstanceRole": {
@@ -60,7 +56,6 @@
 						"default": "EC2 Create"
 					},
 					"Parameters": [
-						"InstanceName",
 						"AmiID",
 						"InstanceRole",
 						"SSHKeyName"
@@ -148,7 +143,7 @@
 						]
 					]
 				},
-				"MapPublicIpOnLaunch": false,
+				"MapPublicIpOnLaunch": true,
 				"Tags": [
 					{
 						"Key": "Name",
@@ -186,7 +181,7 @@
 						]
 					]
 				},
-				"MapPublicIpOnLaunch": false,
+				"MapPublicIpOnLaunch": true,
 				"Tags": [
 					{
 						"Key": "Name",
@@ -224,7 +219,7 @@
 						]
 					]
 				},
-				"MapPublicIpOnLaunch": false,
+				"MapPublicIpOnLaunch": true,
 				"Tags": [
 					{
 						"Key": "Name",
@@ -674,7 +669,12 @@
 						"IpProtocol": "tcp",
 						"FromPort": 443,
 						"ToPort": 443,
-						"CidrIp": "0.0.0.0/0"
+						"CidrIp": {
+							"Fn::GetAtt": [
+								"VPC",
+								"CidrBlock"
+							]
+						}
 					}
 				],
 				"Tags": [
@@ -1269,7 +1269,54 @@
 					{
 						"Key": "Name",
 						"Value": {
-							"Ref": "InstanceName"
+							"Fn::Join": [
+								"-",
+								[
+									{
+										"Ref": "AWS::StackName"
+									},
+									"Node"
+								]
+							]
+						}
+					}
+				]
+			}
+		},
+		"BastionInstance": {
+			"Type": "AWS::EC2::Instance",
+			"Properties": {
+				"ImageId": {
+					"Ref": "AmiID"
+				},
+				"KeyName": {
+					"Ref": "SSHKeyName"
+				},
+				"SubnetId": {
+					"Ref": "PrivateSubnetAZ1"
+				},
+				"InstanceType": "t2.micro",
+				"SecurityGroupIds": [
+					{
+						"Ref": "EC2SecurityGroup"
+					}
+				],
+				"IamInstanceProfile": {
+					"Ref": "InstanceRole"
+				},
+				"Tags": [
+					{
+						"Key": "Name",
+						"Value": {
+							"Fn::Join": [
+								"-",
+								[
+									{
+										"Ref": "AWS::StackName"
+									},
+									"Bastion"
+								]
+							]
 						}
 					}
 				]
@@ -1282,13 +1329,13 @@
 				"Scheme": "internal",
 				"Subnets": [
 					{
-						"Ref": "PrivateSubnetAZ1"
+						"Ref": "PublicSubnetAZ1"
 					},
 					{
-						"Ref": "PrivateSubnetAZ2"
+						"Ref": "PublicSubnetAZ2"
 					},
 					{
-						"Ref": "PrivateSubnetAZ3"
+						"Ref": "PublicSubnetAZ3"
 					}
 				],
 				"Type": "network",
