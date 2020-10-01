@@ -453,7 +453,7 @@
 				]
 			}
 		},
-		"DefaultPublicRoute": {
+		"PublicRoute": {
 			"Type": "AWS::EC2::Route",
 			"DependsOn": "InternetGatewayAttachment",
 			"Properties": {
