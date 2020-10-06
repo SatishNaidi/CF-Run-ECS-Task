@@ -1741,7 +1741,7 @@
 			"Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
 			"Properties": {
 				"Name": {
-					"Fn::Sub": "${Environment}-nlb-ec2login"
+					"Fn::Sub": "${AWS::StackName}-${Environment}-nlb-ec2login"
 				},
 				"Scheme": "internal",
 				"Subnets": [
@@ -1789,7 +1789,7 @@
 			"DependsOn": "PrivateEC2Instance",
 			"Properties": {
 				"Name": {
-					"Fn::Sub": "${Environment}-nlb-targetgroup"
+					"Fn::Sub": "${AWS::StackName}-${Environment}-nlb-targetgroup"
 				},
 				"Port": 22,
 				"Protocol": "TCP",
