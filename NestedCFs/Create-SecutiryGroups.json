@@ -1,0 +1,114 @@
+{
+	"Description": "To Create 2 Instances with Custom Security Group",
+	"Metadata": {
+		"AWS::CloudFormation::Interface": {
+			"ParameterGroups": [
+				{
+					"Label": {
+						"default": "Security Groups"
+					},
+					"Parameters": [
+						"Environment"
+					]
+				}
+			]
+		}
+	},
+	"Parameters": {
+		"Environment": {
+			"Description": "Select an Environment for setting up network",
+			"Type": "String",
+			"AllowedValues": [
+				"prd",
+				"stg",
+				"supp",
+				"perf",
+				"uat",
+				"dev"
+			]
+		}
+	},
+	"Resources": {
+		"EC2SecurityGroup": {
+			"Type": "AWS::EC2::SecurityGroup",
+			"Properties": {
+				"GroupName": {
+					"Fn::Sub": "${Environment}-sg-ec2"
+				},
+				"GroupDescription": "Allow Inbound Traffic to Firewall",
+				"VpcId": {
+					"Fn::ImportValue": {
+						"Fn::Sub": "${Environment}-VPC"
+					}
+				},
+				"SecurityGroupIngress": [
+					{
+						"IpProtocol": "tcp",
+						"FromPort": 22,
+						"ToPort": 22,
+						"CidrIp": {
+							"Fn::ImportValue": {
+								"Fn::Sub": "${Environment}-VPCCIDR"
+							}
+						}
+					}
+				],
+				"Tags": [
+					{
+						"Key": "Name",
+						"Value": {
+							"Fn::Sub": "${Environment}-sg-ec2"
+						}
+					}
+				]
+			}
+		},
+		"SSMSecurityGroup": {
+			"Type": "AWS::EC2::SecurityGroup",
+			"Properties": {
+				"GroupName": {
+					"Fn::Sub": "${Environment}-sg-ssm"
+				},
+				"GroupDescription": "Allow Inbound Traffic to Firewall",
+				"VpcId": {
+					"Fn::ImportValue": {
+						"Fn::Sub": "${Environment}-VPC"
+					}
+				},
+				"SecurityGroupIngress": [
+					{
+						"IpProtocol": "tcp",
+						"FromPort": 443,
+						"ToPort": 443,
+						"CidrIp": {
+							"Fn::ImportValue": {
+								"Fn::Sub": "${Environment}-VPCCIDR"
+							}
+						}
+					}
+				],
+				"Tags": [
+					{
+						"Key": "Name",
+						"Value": {
+							"Fn::Sub": "${Environment}-sg-ssm"
+						}
+					}
+				]
+			}
+		}
+	},
+	"Outputs": {
+		"EC2SecurityGroup": {
+			"Value": {
+				"Ref": "EC2SecurityGroup"
+			},
+			"Export": {
+				"Name": {
+					"Fn::Sub": "${Environment}-EC2SecurityGroup"
+				}
+			},
+			"Description": "EC2SecurityGroup"
+		}
+	}
+}

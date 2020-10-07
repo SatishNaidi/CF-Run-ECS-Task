@@ -1,0 +1,137 @@
+{
+	"Description": "To Create 2 Instances with Custom Security Group",
+	"Metadata": {
+		"AWS::CloudFormation::Interface": {
+			"ParameterGroups": [
+				{
+					"Label": {
+						"default": "VPC And Subnet Selection"
+					},
+					"Parameters": [
+						"Environment",
+						"AvailabilityZone",
+						"InstanceName",
+						"AmiID",
+						"InstanceRole",
+						"SSHKeyName"
+					]
+				}
+			]
+		}
+	},
+	"Parameters": {
+		"Environment": {
+			"Description": "Select an Environment for setting up network",
+			"Type": "String",
+			"AllowedValues": [
+				"prd",
+				"stg",
+				"supp",
+				"perf",
+				"uat",
+				"dev"
+			]
+		},
+		"AvailabilityZone": {
+			"Description": "Select AZ",
+			"Type": "String",
+			"AllowedValues": [
+				"AZ1",
+				"AZ2",
+				"AZ3"
+			]
+		},
+		"SSHKeyName": {
+			"Default": "Mumbai",
+			"Description": "Name of an existing EC2 KeyPair to enable SSH access to the instances",
+			"Type": "AWS::EC2::KeyPair::KeyName",
+			"ConstraintDescription": "Must be the name of an existing EC2 KeyPair."
+		},
+		"AmiID": {
+			"Default": "ami-cfe4b2b0",
+			"Type": "String"
+		},
+		"InstanceName": {
+			"Default": "NewEC2",
+			"Type": "String"
+		},
+		"InstanceRole": {
+			"Default": "EMR_EC2_DefaultRole",
+			"Type": "String"
+		}
+	},
+	"Resources": {
+		"EC2SecurityGroup": {
+			"Type": "AWS::EC2::SecurityGroup",
+			"Properties": {
+				"GroupName": "EC2-Login",
+				"GroupDescription": "Allow Inbound Traffic to Firewall",
+				"VpcId": {
+					"Fn::ImportValue": {
+						"Fn::Sub": "${Environment}-VPC"
+					}
+				},
+				"SecurityGroupIngress": [
+					{
+						"IpProtocol": "tcp",
+						"FromPort": 22,
+						"ToPort": 22,
+						"CidrIp": "0.0.0.0/0"
+					}
+				],
+				"Tags": [
+					{
+						"Key": "Name",
+						"Value": "EC2-Security-Group"
+					}
+				]
+			}
+		},
+		"PrivateEC2Instance": {
+			"Type": "AWS::EC2::Instance",
+			"Properties": {
+				"ImageId": {
+					"Ref": "AmiID"
+				},
+				"KeyName": {
+					"Ref": "SSHKeyName"
+				},
+				"SubnetId": {
+					"Fn::ImportValue": {
+						"Fn::Sub": "${Environment}-PrivateSubnet${AvailabilityZone}"
+					}
+				},
+				"InstanceType": "t2.micro",
+				"SecurityGroupIds": [
+					{
+						"Ref": "EC2SecurityGroup"
+					}
+				],
+				"IamInstanceProfile": {
+					"Ref": "InstanceRole"
+				},
+				"Tags": [
+					{
+						"Key": "Name",
+						"Value": {
+							"Ref": "InstanceName"
+						}
+					}
+				]
+			}
+		}
+	},
+	"Outputs": {
+		"MyInstance1": {
+			"Value": {
+				"Ref": "PrivateEC2Instance"
+			},
+			"Export": {
+				"Name": {
+					"Fn::Sub": "${Environment}-PrivateEC2Instance"
+				}
+			},
+			"Description": "PrivateEC2Instance"
+		}
+	}
+}
