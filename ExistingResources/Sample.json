@@ -1,0 +1,42 @@
+{
+	"AWSTemplateFormatVersion": "2010-09-09",
+	"Description": "Import test",
+	"Resources": {
+		"GamesTable": {
+			"Type": "AWS::DynamoDB::Table",
+			"DeletionPolicy": "Retain",
+			"Properties": {
+				"TableName": "Games",
+				"AttributeDefinitions": [
+					{
+						"AttributeName": "key",
+						"AttributeType": "S"
+					}
+				],
+				"KeySchema": [
+					{
+						"AttributeName": "key",
+						"KeyType": "HASH"
+					}
+				],
+				"ProvisionedThroughput": {
+					"ReadCapacityUnits": 5,
+					"WriteCapacityUnits": 1
+				}
+			}
+		}
+	},
+	"Outputs": {
+		"VPC": {
+			"Description": "A reference to the created VPC",
+			"Value": {
+				"Ref": "GamesTable"
+			},
+			"Export": {
+				"Name": {
+					"Fn::Sub": "${AWS::StackName}-DynamoTable"
+				}
+			}
+		}
+	}
+}
