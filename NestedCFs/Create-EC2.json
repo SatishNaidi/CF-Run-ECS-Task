@@ -56,7 +56,7 @@
 			"Type": "String"
 		},
 		"InstanceRole": {
-			"Default": "EMR_EC2_DefaultRole",
+			"Default": "AmazonSSMRoleForInstancesQuickSetup",
 			"Type": "String"
 		}
 	},
