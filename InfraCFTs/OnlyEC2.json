@@ -1,0 +1,121 @@
+{
+	"AWSTemplateFormatVersion": "2010-09-09",
+	"Description": "Creates an NLB and An EC2 instance under NLB along with one Bastion for loging in",
+	"Parameters": {
+		"Environment": {
+			"Description": "Select an Environment for setting up network",
+			"Type": "String",
+			"AllowedValues": [
+				"prd",
+				"stg",
+				"supp",
+				"perf",
+				"uat",
+				"dev"
+			]
+		},
+		"AvailabilityZone": {
+			"Description": "Select AZ",
+			"Type": "String",
+			"AllowedValues": [
+				"AZ1",
+				"AZ2",
+				"AZ3"
+			]
+		},
+		"SSHKeyName": {
+			"Description": "Name of an existing EC2 KeyPair to enable SSH access to the instances",
+			"Type": "AWS::EC2::KeyPair::KeyName",
+			"ConstraintDescription": "Must be the name of an existing EC2 KeyPair."
+		},
+		"AmiID": {
+			"Default": "ami-02354e95b39ca8dec",
+			"Type": "String"
+		},
+		"InstanceProfileRole": {
+			"Default": "AmazonSSMRoleForInstancesQuickSetup",
+			"Type": "String"
+		}
+	},
+	"Metadata": {
+		"AWS::CloudFormation::Interface": {
+			"ParameterGroups": [
+				{
+					"Label": {
+						"default": "EC2 Parameters"
+					},
+					"Parameters": [
+						"Environment",
+						"AvailabilityZone",
+						"AmiID",
+						"InstanceProfileRole",
+						"SSHKeyName"
+					]
+				}
+			]
+		}
+	},
+	"Resources": {
+		"EC2Instance": {
+			"Type": "AWS::EC2::Instance",
+			"Properties": {
+				"ImageId": {
+					"Ref": "AmiID"
+				},
+				"KeyName": {
+					"Ref": "SSHKeyName"
+				},
+				"InstanceType": "t2.micro",
+				"SubnetId": {
+					"Fn::ImportValue": {
+						"Fn::Sub": "${Environment}-PrivateSubnet${AvailabilityZone}"
+					}
+				},
+				"SecurityGroupIds": [
+					{
+						"Fn::ImportValue": {
+							"Fn::Sub": "${Environment}-EC2SecurityGroup"
+						}
+					}
+				],
+				"IamInstanceProfile": {
+					"Ref": "InstanceProfileRole"
+				},
+				"Tags": [
+					{
+						"Key": "Name",
+						"Value": {
+							"Fn::Sub": "${AWS::StackName}-${Environment}-ec2-oneInstance"
+						}
+					},
+					{
+						"Key": "Role",
+						"Value": "compute"
+					},
+					{
+						"Key": "OS",
+						"Value": "al2"
+					},
+					{
+						"Key": "Platform",
+						"Value": "infrastructure"
+					},
+					{
+						"Key": "Env",
+						"Value": {
+							"Ref": "Environment"
+						}
+					}
+				]
+			}
+		}
+	},
+	"Outputs": {
+		"PrivateEC2Instance": {
+			"Description": "PrivateEC2Instance",
+			"Value": {
+				"Ref": "EC2Instance"
+			}
+		}
+	}
+}
